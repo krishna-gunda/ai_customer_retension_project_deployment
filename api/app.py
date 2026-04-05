@@ -1,11 +1,10 @@
-```python
 from flask import Flask, render_template, request
 import pickle
 import numpy as np
 import os
 
 # =========================
-# PATH SETUP (VERY IMPORTANT FOR VERCEL)
+# PATH SETUP (FOR VERCEL)
 # =========================
 BASE_DIR = os.path.dirname(__file__)
 
@@ -13,6 +12,9 @@ model_path = os.path.join(BASE_DIR, "../Model.pkl")
 scaler_path = os.path.join(BASE_DIR, "../standar_scaler.pkl")
 template_path = os.path.join(BASE_DIR, "../templates")
 
+# =========================
+# FLASK APP
+# =========================
 app = Flask(__name__, template_folder=template_path)
 
 # =========================
@@ -87,7 +89,7 @@ def index():
                         input_data.append(float(value))
 
             # =========================
-            # DEBUG (VERY IMPORTANT)
+            # DEBUG
             # =========================
             print("Feature count:", len(input_data))
             print("Input data:", input_data)
@@ -120,9 +122,13 @@ def index():
 
 
 # =========================
-# RUN (LOCAL ONLY)
+# LOCAL RUN ONLY
 # =========================
 if __name__ == "__main__":
     app.run(debug=True)
-```
+
+
+# =========================
+# VERCEL ENTRY POINT (CRITICAL)
+# =========================
 handler = app
