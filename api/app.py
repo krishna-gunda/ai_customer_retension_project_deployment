@@ -4,17 +4,15 @@ import numpy as np
 import os
 
 # =========================
-# PATH SETUP (FOR VERCEL)
+# PATH SETUP (VERCEL-SAFE)
 # =========================
-BASE_DIR = os.path.dirname(__file__)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.dirname(BASE_DIR)  # one level up from api/
 
-model_path = os.path.join(BASE_DIR, "../Model.pkl")
-scaler_path = os.path.join(BASE_DIR, "../standar_scaler.pkl")
-template_path = os.path.join(BASE_DIR, "../templates")
+model_path = os.path.join(ROOT_DIR, "Model.pkl")
+scaler_path = os.path.join(ROOT_DIR, "standar_scaler.pkl")
+template_path = os.path.join(ROOT_DIR, "templates")
 
-# =========================
-# FLASK APP
-# =========================
 app = Flask(__name__, template_folder=template_path)
 
 # =========================
@@ -52,9 +50,6 @@ feature_columns = [
     'tenure_scaled_trim'
 ]
 
-# =========================
-# ROUTE
-# =========================
 @app.route("/", methods=["GET", "POST"])
 def index():
     prediction = None
@@ -62,73 +57,33 @@ def index():
     if request.method == "POST":
         try:
             input_data = []
-
-            # =========================
-            # HANDLE SIM COLUMN (ONE-HOT)
-            # =========================
             sim_value = request.form.get("sim_column")
-
             sim_features = {
                 'sim_column_BSNL': 1 if sim_value == "BSNL" else 0,
                 'sim_column_Idea': 1 if sim_value == "Idea" else 0,
                 'sim_column_Reliancejio': 1 if sim_value == "Reliancejio" else 0
             }
 
-            # =========================
-            # BUILD INPUT DATA
-            # =========================
             for col in feature_columns:
                 if col in sim_features:
                     input_data.append(sim_features[col])
                 else:
                     value = request.form.get(col)
+                    input_data.append(float(value) if value else 0)
 
-                    if value is None or value == "":
-                        input_data.append(0)
-                    else:
-                        input_data.append(float(value))
-
-            # =========================
-            # DEBUG
-            # =========================
-            print("Feature count:", len(input_data))
-            print("Input data:", input_data)
-
-            # =========================
-            # CONVERT TO NUMPY
-            # =========================
             features_array = np.array([input_data])
-
-            # =========================
-            # SCALE
-            # =========================
             features_scaled = scaler.transform(features_array)
-
-            # =========================
-            # PREDICT
-            # =========================
             pred = model.predict(features_scaled)[0]
 
-            if pred == 1:
-                prediction = "Customer will Churn ❌"
-            else:
-                prediction = "Customer will Stay ✅"
+            prediction = "Customer will Churn ❌" if pred == 1 else "Customer will Stay ✅"
 
         except Exception as e:
-            print("ERROR:", str(e))
             prediction = f"Error: {str(e)}"
 
     return render_template("index.html", prediction=prediction)
 
-
-# =========================
-# LOCAL RUN ONLY
-# =========================
 if __name__ == "__main__":
     app.run(debug=True)
 
-
-# =========================
-# VERCEL ENTRY POINT (CRITICAL)
-# =========================
+# Vercel entry point
 handler = app
